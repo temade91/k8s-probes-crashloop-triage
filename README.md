@@ -21,15 +21,6 @@ I also tested readiness behaviour by temporarily making the application unready 
 
 The original liveness check was failing because its expected health file was not present when the check ran. Kubernetes treated the failed liveness checks as evidence that the container was unhealthy and repeatedly restarted it.
 
-The terminal evidence shows the pod in `CrashLoopBackOff` with 13 restarts and repeated `Unhealthy` and `Killing` events.
-
-### Before Remediation
-
-![Pod in CrashLoopBackOff](evidence/01-before-crashloop.png)
-
-The pod events show the liveness probe failure:
-
-![Liveness probe failure events](evidence/02-liveness-probe-events.png)
 
 ## Remediation
 
@@ -61,10 +52,6 @@ kubectl apply -f fixed-app.yaml -n probe-lab
 kubectl get pods -n probe-lab
 ```
 
-**Verified result:** The replacement pod reached `1/1 Running` with zero restarts.
-
-![Pod running successfully](evidence/03-after-fix-running.png)
-
 ### 3. Test readiness and endpoint isolation
 
 I simulated an application readiness failure by removing the readiness file from the running container.
@@ -92,11 +79,6 @@ sleep 6
 kubectl get pods -n probe-lab
 kubectl get endpoints payment-svc -n probe-lab
 ```
-
-**Verified result:** Readiness returned to `1/1`, the pod IP (`10.244.0.6:8080`) returned to the Service endpoints, and the restart count remained at zero.
-
-![Readiness and endpoint isolation test](evidence/04-readiness-endpoint-isolation.png)
-
 ### 4. Clean up
 
 ```bash
@@ -125,4 +107,3 @@ kubectl delete namespace probe-lab
 
 This lab gave me practical experience troubleshooting a Kubernetes workload that repeatedly restarted because of health-check configuration. I reproduced the failure, applied a probe-based fix, and verified application recovery and readiness-based endpoint isolation.
 
-The screenshots in the `evidence/` directory are cropped from my terminal session and show the incident, remediation, and verification results.
