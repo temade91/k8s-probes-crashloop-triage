@@ -88,7 +88,7 @@ kubectl delete namespace probe-lab
 ## Repository Structure
 
 ```text
-.
+
 ├── broken-app.yaml
 ├── fixed-app.yaml
 ├── README.md
