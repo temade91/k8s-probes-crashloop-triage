@@ -1,0 +1,74 @@
+# Hole 1: CoreDNS (UDP/TCP 53)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: prod-payments
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+# Hole 2: NGINX Ingress -> payment-api (80) & payment-api -> payments-db (5432)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: payment-api-policy
+  namespace: prod-payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: payments-db
+    ports:
+    - protocol: TCP
+      port: 5432
+---
+# Hole 3: ONLY payment-api -> payments-db (5432)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: payments-db-policy
+  namespace: prod-payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payments-db
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: payment-api
+    ports:
+    - protocol: TCP
+      port: 5432
